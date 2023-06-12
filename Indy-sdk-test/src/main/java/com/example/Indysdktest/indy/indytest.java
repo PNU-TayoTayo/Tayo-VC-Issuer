@@ -13,14 +13,22 @@ import org.hyperledger.indy.sdk.wallet.Wallet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+import static org.hyperledger.indy.sdk.IndyConstants.ROLE_STEWARD;
 import static org.hyperledger.indy.sdk.IndyConstants.ROLE_TRUSTEE;
+import static org.hyperledger.indy.sdk.pool.Pool.openPoolLedger;
 
 public class indytest {
+
+    static Logger log = LoggerFactory.getLogger(indytest.class);
+
     public static void setUp() throws Exception {
+
         System.out.println("\n\n\n");
         System.out.println("STEP 1 - Connect to Pool");
         Pool pool = createAndOpenPoolLedger();
@@ -30,9 +38,9 @@ public class indytest {
         // Steward 정보 설정
         Map<String, Object> steward = new HashMap<>();
         steward.put("name", "Sovrin Steward");
-        steward.put("wallet_config", new JSONObject().put("id", "Trustee_wallet").toString());
-        steward.put("wallet_credentials", new JSONObject().put("key", "Trustee_wallet_key").toString());
-        steward.put("seed", "000000000000000000000000Trustee1");
+        steward.put("wallet_config", new JSONObject().put("id", "souvrin_steward_wallet").toString());
+        steward.put("wallet_credentials", new JSONObject().put("key", "steward_wallet_key").toString());
+        steward.put("seed", "000000000000000000000000Steward1");
 
         Wallet.createWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
         Wallet stewardWallet = Wallet.openWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
@@ -40,30 +48,40 @@ public class indytest {
         if(stewardWallet != null){
             try {
                 // Create Trustee DID
-                String trusteeSeed = new JSONObject().put("seed", "000000000000000000000000Trustee1").toString();
-                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(stewardWallet, trusteeSeed).get();
+                String trusteeSeed = new JSONObject().put("seed", "000000000000000000000000Steward1").toString();
 
-                steward.put("did",didResult.getDid());
-                steward.put("key",didResult.getVerkey());
-
-//                String stewardDid = Did.getDidWithMeta(stewardWallet, "V4SGRU86Z58d6TV7PBUe6f").get();
-//                JSONObject stewardDidJson = new JSONObject(stewardDid);
-//
-//                steward.put("did",stewardDidJson.getString("did"));
-//                steward.put("key",stewardDidJson.getString("verkey"));
+                DidResults.CreateAndStoreMyDidResult stewardDid = Did.createAndStoreMyDid(stewardWallet, trusteeSeed).get();
+                steward.put("did",stewardDid.getDid());
+                steward.put("key",stewardDid.getVerkey());
 
                 // 결과 출력
                 System.out.println("steward DID: " + steward.get("did"));
                 System.out.println("steward Key: " + steward.get("key"));
 
+//                DidResults.CreateAndStoreMyDidResult stewardDidForGovernment = Did.createAndStoreMyDid(stewardWallet, "{}").get();
+//                steward.put("did_for_government",stewardDidForGovernment.getDid());
+//                steward.put("key_for_government",stewardDidForGovernment.getVerkey());
+//
+//                System.out.println("steward DID for government : " + steward.get("did_for_government"));
+//                System.out.println("steward Key for government : " + steward.get("key_for_government"));
+//
+//                // TODO : role(TRUST_ANCHOR)이 애매하네
+//                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), steward.get("did_for_government").toString(),
+//                        steward.get("key_for_government").toString(), null, "TRUST_ANCHOR").get();
+//                String didForGovernmentRes = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
+//                System.out.println(didForGovernmentRes);
+                /*
+                nym_request = await ledger.build_nym_request(steward['did'], steward['did_for_government'], steward['key_for_faber'], None, role)
+                await ledger.sign_and_submit_request(steward['pool'], steward['wallet'], steward['did'], nym_request)
 
-                // Store Trustee DID in the Ledger
-                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), steward.get("did").toString(),
-                        steward.get("key").toString(), null, ROLE_TRUSTEE).get();
-                String did = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
+                 */
 
-                System.out.println("결과 : " + did);
-
+//                // Store Trustee DID in the Ledger
+//                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), steward.get("did").toString(),
+//                        steward.get("key").toString(), null, ROLE_STEWARD).get();
+////                String did = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
+//                String res = signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest);
+//                System.out.println(res);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -75,20 +93,21 @@ public class indytest {
         System.out.println("\n\n\n");
         System.out.println("STEP 3 - register DID for government");
 
+
         // Government 정보 설정
         Map<String, Object> government = new HashMap<>();
         government.put("name", "theGovernment");
-        government.put("wallet_config", new JSONObject().put("id", "Government").toString());
-        government.put("wallet_credentials", new JSONObject().put("key", "the_Government_wallet_key"));
+        government.put("wallet_config", new JSONObject().put("id", "government_wallet").toString());
+        government.put("wallet_credentials", new JSONObject().put("key", "government_wallet_key"));
         government.put("pool", pool);
-        government.put("role", "ENDORSER");
+        government.put("role", "{}");
 
         Wallet.createWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
         Wallet governmentWallet = Wallet.openWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
 
         if(governmentWallet != null){
             try {
-                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(governmentWallet, new JSONObject().put("seed", "000000000000000000000Government1").toString()).get();
+                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(governmentWallet, "{}").get();
                 government.put("did",didResult.getDid());
                 government.put("key",didResult.getVerkey());
 
@@ -98,9 +117,12 @@ public class indytest {
 
                 // steward의 did를 사용하여 government의 did를 등록하고, 해당 did를 TRUST_ANCHOR 역할로 설정하는 작업을 수행
                 String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), government.get("did").toString(), government.get("key").toString(),
-                        null, government.get("role").toString()).get();
-                String res = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
-                System.out.println("결과 : " + res);
+                        null, "TRUST_ANCHOR").get();
+                //String res = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
+                //System.out.println("결과 : " + res);
+
+                String res = signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest);
+                System.out.println(res);
 
 
             } catch (Exception ex) {
@@ -110,6 +132,14 @@ public class indytest {
 
         System.out.println(Did.getListMyDidsWithMeta(governmentWallet).get());
 
+//        closeAndDeleteWallet(stewardWallet, steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString());
+//        closeAndDeleteWallet(governmentWallet, government.get("wallet_config").toString(), government.get("wallet_credentials").toString());
+//
+//
+//        pool.closePoolLedger().get();
+//        Pool.deletePoolLedgerConfig("pool1").get();
+
+
 
         System.out.println("\n\n\n");
         System.out.println("STEP 3 - register DID for University");
@@ -117,10 +147,10 @@ public class indytest {
         // University 정보 설정
         Map<String, Object> university = new HashMap<>();
         university.put("name", "University");
-        university.put("wallet_config", new JSONObject().put("id", "University").toString());
-        university.put("wallet_credentials", new JSONObject().put("key", "the_University_wallet_key").toString());
+        university.put("wallet_config", new JSONObject().put("id", "theUniversity_wallet").toString());
+        university.put("wallet_credentials", new JSONObject().put("key", "theUniversity_wallet_key").toString());
         university.put("pool", pool);
-        university.put("role", "ENDORSER");
+        university.put("role", null);
 
 
         Wallet.createWallet(university.get("wallet_config").toString(), university.get("wallet_credentials").toString()).get();
@@ -128,7 +158,7 @@ public class indytest {
 
         if(universityWallet != null){
             try {
-                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(universityWallet, new JSONObject().put("seed", "000000000000000000000University1").toString()).get();
+                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(universityWallet, "{}").get();
                 university.put("did",didResult.getDid());
                 university.put("key",didResult.getVerkey());
 
@@ -138,9 +168,10 @@ public class indytest {
 
 
                 String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), university.get("did").toString(), university.get("key").toString(),
-                        null, university.get("role").toString()).get();
-                String res = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
-                System.out.println("결과 : " + res);
+                        null, "TRUST_ANCHOR").get();
+                //String res = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
+                String res = signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest);
+                System.out.println(res);
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -156,8 +187,8 @@ public class indytest {
         // Government 정보 설정
         Map<String, Object> company = new HashMap<>();
         company.put("name", "company");
-        company.put("wallet_config", new JSONObject().put("id", "Company").toString());
-        company.put("wallet_credentials", new JSONObject().put("key", "the_Company_wallet_key").toString());
+        company.put("wallet_config", new JSONObject().put("id", "theCompany_wallet").toString());
+        company.put("wallet_credentials", new JSONObject().put("key", "theCompany_wallet_key").toString());
         company.put("pool", pool);
         company.put("role", "ENDORSER");
 
@@ -166,7 +197,7 @@ public class indytest {
 
         if(companyWallet != null){
             try {
-                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(companyWallet, new JSONObject().put("seed", "000000000000000000000000Company1").toString()).get();
+                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(companyWallet, "{}").get();
                 company.put("did",didResult.getDid());
                 company.put("key",didResult.getVerkey());
 
@@ -174,9 +205,10 @@ public class indytest {
                 System.out.println("company Key: " + company.get("key"));
 
                 String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), company.get("did").toString(), company.get("key").toString(),
-                        null, company.get("role").toString()).get();
-                String res = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
-                System.out.println("결과 : " + res);
+                        null, "TRUST_ANCHOR").get();
+                //String res = Ledger.signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest).get();
+                String res = signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest);
+                System.out.println(res);
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -227,6 +259,8 @@ public class indytest {
         System.out.println(schemaRequest);
 
         // Ledger.signAndSubmitRequest 함수를 사용하여 스키마 등록요청을 서명하고 ledger에 제출
+        //String res = signAndSubmitRequest(pool, stewardWallet, steward.get("did").toString(), nymRequest);
+        //String res = signAndSubmitRequest(pool,governmentWallet,government.get("did").toString(),schemaRequest);
         String res = Ledger.signAndSubmitRequest((Pool) government.get("pool"), governmentWallet, government.get("did").toString(),
                 schemaRequest).get();
         System.out.println(res);
@@ -240,6 +274,7 @@ public class indytest {
 
         // GET SCHEMA FROM LEDGER (앞에서 정부가 정의해둔 Schema를 레저로 부터 가져옴)
         String getSchemaRequest = Ledger.buildGetSchemaRequest(university.get("did").toString(), transcript_schema_id).get();
+        System.out.println("어디가 에러 ..?");
         System.out.println(getSchemaRequest);
 
         // TODO : 이 부분이 다르긴 함
@@ -304,17 +339,20 @@ public class indytest {
         if(AliceWallet != null){
             try {
 
-              DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(AliceWallet, new JSONObject().put("seed", "00000000000000000000000000Alice1").toString()).get();
+                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(AliceWallet, "{}").get();
                 Alice.put("did",didResult.getDid());
                 Alice.put("key",didResult.getVerkey());
 
                 System.out.println("Alice DID: " + Alice.get("did"));
                 System.out.println("Alice Key: " + Alice.get("key"));
 
-                String nymRequest = Ledger.buildNymRequest(government.get("did").toString(), Alice.get("did").toString(), Alice.get("key").toString(),
-                        null, null).get();
+
+                // TODO : 여기 에러
+                String nymRequest = Ledger.buildNymRequest(government.get("did").toString(), Alice.get("did").toString(), Alice.get("key").toString(), null, "ENDORSER").get();
                 String resd = Ledger.signAndSubmitRequest(pool, governmentWallet, government.get("did").toString(), nymRequest).get();
-                System.out.println("결과 : " + resd);
+//                System.out.println("결과 : " + resd);
+//                String ress = signAndSubmitRequest(pool, governmentWallet, government.get("did").toString(), nymRequest);
+//                System.out.println(ress);
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -361,7 +399,7 @@ public class indytest {
         System.out.println("\n\"Alice\" -> Create \"Transcript\" Credential Request for theUniversity");
         AnoncredsResults.ProverCreateCredentialRequestResult credentialRequestResult =
                 Anoncreds.proverCreateCredentialReq(AliceWallet, Alice.get("did").toString(), Alice.get("transcript_cred_offer").toString(),
-                Alice.get("theUniversity_transcript_cred_def").toString(), Alice.get("master_secret_id").toString()).get();
+                        Alice.get("theUniversity_transcript_cred_def").toString(), Alice.get("master_secret_id").toString()).get();
         Alice.put("transcript_cred_request",credentialRequestResult.getCredentialRequestJson());
         Alice.put("transcript_cred_request_metadata",credentialRequestResult.getCredentialRequestMetadataJson());
 
@@ -379,14 +417,14 @@ public class indytest {
                 .put("degree", new JSONObject().put("raw", "Bachelor of Science, Marketing").put("encoded", "12434523576212321"))
                 .put("status", new JSONObject().put("raw", "graduated").put("encoded", "2213454313412354"))
                 .put("ssn", new JSONObject().put("raw", "123-45-6789").put("encoded", "3124141231422543541"))
-                .put("year", new JSONObject().put("raw", "2015").put("encoded", "2015"))
+                .put("year", new JSONObject().put("raw", "2015").put("encoded", "2016"))
                 .put("average", new JSONObject().put("raw", "5").put("encoded", "5"));
 
         university.put("alice_transcript_cred_values",credValuesJson);
 
         AnoncredsResults.IssuerCreateCredentialResult issuerCredentialResult =
                 Anoncreds.issuerCreateCredential(universityWallet, university.get("transcript_cred_offer").toString(),university.get("transcript_cred_request").toString(),
-                university.get("alice_transcript_cred_values").toString(),null,0).get();
+                        university.get("alice_transcript_cred_values").toString(),null,0).get();
 
         String transcriptCredJson = issuerCredentialResult.getCredentialJson();
         university.put("transcript_cred",transcriptCredJson);
@@ -523,9 +561,9 @@ public class indytest {
         //Alice creates the Proof for Acme Job-Application Proof Request
         // proof가 최종 제출할 VP
         String proofJson = Anoncreds.proverCreateProof(AliceWallet, Alice.get("job_application_proof_request").toString()
-                            ,Alice.get("job_application_requested_creds").toString()
-                            ,Alice.get("master_secret_id").toString()
-                            ,schemas, credDefs, revocState).get();
+                ,Alice.get("job_application_requested_creds").toString()
+                ,Alice.get("master_secret_id").toString()
+                ,schemas, credDefs, revocState).get();
 
         JSONObject proof = new JSONObject(proofJson);
 
@@ -537,6 +575,31 @@ public class indytest {
         // 이렇게 만든 VP를 Company에 제출!
         System.out.println( "\n\"Alice\" -> Send \"Job-Application\" Proof to theCompany" );
         company.put("job_application_proof", Alice.get("job_application_proof"));
+
+        /*
+            TODO : 테스트 : 만약 수정이 일어난다면 ??
+         */
+
+        JSONObject data = new JSONObject(Alice.get("job_application_proof").toString());
+        JSONArray cList = data.getJSONObject("proof")
+                .getJSONObject("aggregated_proof")
+                .getJSONArray("c_list");
+        cList.getJSONArray(0).put(0, 150);
+
+//        JSONObject data = new JSONObject(Alice.get("job_application_proof").toString());
+//        data.getJSONObject("requested_proof")
+//                .getJSONObject("revealed_attrs")
+//                .getJSONObject("attr5_referent").put("raw", "55-5");
+//        data.getJSONObject("requested_proof")
+//                .getJSONObject("self_attested_attrs").put("attr1_referent", "donu");
+
+//
+//        System.out.println(data);
+//
+        company.put("job_application_proof",data);
+//        System.out.println(company.get("job_application_proof"));
+
+        //?!
 
         // 마지막 STEP 8 !!! 회사가 받은 엘리스의 VP를 검증하는 과정!!!!!!!!!
         // company.get("job_application_proof") 이게 받은거
@@ -667,10 +730,6 @@ public class indytest {
             JSONObject credInfo = o.getJSONObject("cred_info");
             String schemaId = credInfo.getString("schema_id");
             String credDefId = credInfo.getString("cred_def_id");
-//            System.out.println("\n-->" + o);
-//            System.out.println(credInfo);
-//            System.out.println(schemaId);
-//            System.out.println(credDefId+"\n");
 
             if (schemas.isNull(schemaId)) {
                 String getSchemaRequest = Ledger.buildGetSchemaRequest(did, schemaId).get();
@@ -699,12 +758,12 @@ public class indytest {
     static Pool createAndOpenPoolLedger() throws Exception {
 
         String poolName = "pool1";
-        String poolConfig = "{\"genesis_txn\": \"Indy-sdk-test/src/main/java/com/example/Indysdktest/indy/pool1.txn\"} ";
+        String poolConfig = "{\"genesis_txn\": \"src/main/java/com/example/Indysdktest/indy/pool1.txn\"} ";
 
         Pool.setProtocolVersion(2);
         Pool.createPoolLedgerConfig(poolName,poolConfig);
 
-        Pool pool = Pool.openPoolLedger(poolName, "{}").get();
+        Pool pool = openPoolLedger(poolName, "{}").get();
         System.out.println("openPoolLedger 관련 : " + pool.toString());
 
         return pool;
@@ -729,6 +788,22 @@ public class indytest {
             wallet.closeWallet().get();
             Wallet.deleteWallet(config, key).get();
         }
+    }
+
+    private static String signAndSubmitRequest(Pool pool, Wallet endorserWallet, String endorserDid, String request) throws Exception {
+        return submitRequest(pool, Ledger.signRequest(endorserWallet, endorserDid, request).get());
+    }
+
+    private static String submitRequest(Pool pool, String req) throws Exception {
+        String res = Ledger.submitRequest(pool, req).get();
+        if ("REPLY".equals(new JSONObject(res).get("op"))) {
+            log.info("SubmitRequest: " + req);
+            log.info("SubmitResponse: " + res);
+        } else {
+            log.warn("SubmitRequest: " + req);
+            log.warn("SubmitResponse: " + res);
+        }
+        return res.toString();
     }
 
 

@@ -10,5 +10,6 @@
         <module name="Indy-sdk-test.main" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="11" />
   </component>
 </project>
