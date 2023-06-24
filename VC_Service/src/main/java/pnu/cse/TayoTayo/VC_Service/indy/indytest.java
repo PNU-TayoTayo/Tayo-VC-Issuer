@@ -30,6 +30,7 @@ public class indytest {
         System.out.println("\n\n\nSTEP 1 - Connect to Pool");
         Pool pool = createAndOpenPoolLedger();
 
+
         System.out.println("\n\n\nSTEP 2 - Configuring steward");
         Map<String, Object> steward = new HashMap<>();
         steward.put("name", "Sovrin Steward");
@@ -59,6 +60,7 @@ public class indytest {
         }
 
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////여기까지 완료
 
         System.out.println("\n\n\n");
         System.out.println("STEP 3 - register DID for government");
