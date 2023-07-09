@@ -4,6 +4,7 @@ package pnu.cse.TayoTayo.VC_Service.controller;
 import lombok.RequiredArgsConstructor;
 import org.hyperledger.indy.sdk.IndyException;
 import org.springframework.web.bind.annotation.*;
+import pnu.cse.TayoTayo.VC_Service.dto.request.VCRequest;
 import pnu.cse.TayoTayo.VC_Service.service.VCService;
 
 import java.util.concurrent.ExecutionException;
@@ -24,6 +25,18 @@ public class VCController {
 
         return credentialOffer;
     }
+
+    @PostMapping("/getVC")
+    public String getVC(@RequestBody VCRequest request) throws IndyException, ExecutionException, InterruptedException {
+
+        // TODO : Private API룰 구축하자!!
+        System.out.println("\n\nBE에서 요청온 offer : " + request.getCredentialOffer());
+        System.out.println("\n\nBE에서 요청온 Json : "+request.getCredentialRequestJson());
+
+        return vcService.createVC(request.getCredentialOffer(), request.getCredentialRequestJson());
+
+    }
+
 
 
 
