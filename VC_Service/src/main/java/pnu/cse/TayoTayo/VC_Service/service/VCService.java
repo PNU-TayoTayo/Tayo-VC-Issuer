@@ -54,7 +54,7 @@ public class VCService {
                 .put("car_model", new JSONObject().put("raw", "Mercedes-Benz G-Class").put("encoded", "2213454313412354"))
                 .put("car_delivery_date", new JSONObject().put("raw", "2023-01-01").put("encoded", "3124141231422543541"))
                 .put("inspection_record", new JSONObject().put("raw", "2021-01-01").put("encoded", "32156498165564"))
-                .put("driving_record", new JSONObject().put("raw", "250.5km").put("encoded", "15184965131564"));
+                .put("driving_record", new JSONObject().put("raw", "250").put("encoded", "15184965131564"));
 
 
         AnoncredsResults.IssuerCreateCredentialResult issuerCredentialResult =

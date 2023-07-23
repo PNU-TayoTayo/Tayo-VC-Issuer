@@ -41,7 +41,7 @@ public class PoolAndWalletManager {
     private Map<String, Object> government = new HashMap<>();
     private Map<String, Object> Issuer = new HashMap<>();
 
-    public PoolAndWalletManager() throws IndyException, ExecutionException, InterruptedException {
+    public PoolAndWalletManager() throws Exception {
         this.pool = createPool();
         this.stewardWallet = createStewardWallet();
         this.governmentWallet = createGovermentWallet();
@@ -88,18 +88,18 @@ public class PoolAndWalletManager {
         }catch(Exception e){
             Wallet.createWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
             stWallet = Wallet.openWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
+
+            DidResults.CreateAndStoreMyDidResult stewardDid = Did.createAndStoreMyDid(stWallet, new JSONObject().put("seed", steward.get("seed")).toString()).get();
+            steward.put("did",stewardDid.getDid());
+            steward.put("key",stewardDid.getVerkey());
         }
 
-
-        DidResults.CreateAndStoreMyDidResult stewardDid = Did.createAndStoreMyDid(stWallet, new JSONObject().put("seed", steward.get("seed")).toString()).get();
-        steward.put("did",stewardDid.getDid());
-        steward.put("key",stewardDid.getVerkey());
 
         System.out.println("\n\n===Steward의 지갑 생성 완료===");
         return stWallet;
     }
 
-    private Wallet createGovermentWallet() throws IndyException, ExecutionException, InterruptedException {
+    private Wallet createGovermentWallet() throws Exception {
 
         System.out.println("\n\n===Goverment의 지갑 생성 시작===");
 
@@ -117,30 +117,39 @@ public class PoolAndWalletManager {
         }catch(Exception e){
             Wallet.createWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
             govWallet = Wallet.openWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
+
+            DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(govWallet, "{}").get();
+            government.put("did",didResult.getDid());
+            government.put("key",didResult.getVerkey());
+
+            String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), government.get("did").toString(), government.get("key").toString(),
+                    null, "TRUST_ANCHOR").get();
+            String res = signAndSubmitRequest(pool, stewardWallet,steward.get("did").toString(), nymRequest);
+            System.out.println(res);
         }
 
-        if(govWallet != null){
-            try {
-                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(govWallet, "{}").get();
-                government.put("did",didResult.getDid());
-                government.put("key",didResult.getVerkey());
-
-                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), government.get("did").toString(), government.get("key").toString(),
-                        null, "TRUST_ANCHOR").get();
-                String res = signAndSubmitRequest(pool, stewardWallet,steward.get("did").toString(), nymRequest);
-                System.out.println(res);
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
+//        if(govWallet != null){
+//            try {
+//                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(govWallet, "{}").get();
+//                government.put("did",didResult.getDid());
+//                government.put("key",didResult.getVerkey());
+//
+//                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), government.get("did").toString(), government.get("key").toString(),
+//                        null, "TRUST_ANCHOR").get();
+//                String res = signAndSubmitRequest(pool, stewardWallet,steward.get("did").toString(), nymRequest);
+//                System.out.println(res);
+//
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
+//        }
 
         System.out.println("\n\n===Goverment의 지갑 생성 완료===");
 
         return govWallet;
     }
 
-    private Wallet createIssuerWallet() throws IndyException, ExecutionException, InterruptedException {
+    private Wallet createIssuerWallet() throws Exception {
 
         System.out.println("\n\n===Issuer의 지갑 생성 시작===");
 
@@ -156,25 +165,37 @@ public class PoolAndWalletManager {
         try {
             IssWallet = Wallet.openWallet(Issuer.get("wallet_config").toString(), Issuer.get("wallet_credentials").toString()).get();
         }catch(Exception e){
+
             Wallet.createWallet(Issuer.get("wallet_config").toString(), Issuer.get("wallet_credentials").toString()).get();
             IssWallet = Wallet.openWallet(Issuer.get("wallet_config").toString(), Issuer.get("wallet_credentials").toString()).get();
+
+            DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(IssWallet, "{}").get();
+            Issuer.put("did",didResult.getDid());
+            Issuer.put("key",didResult.getVerkey());
+
+            String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), Issuer.get("did").toString(), Issuer.get("key").toString(),
+                    null, "TRUST_ANCHOR").get();
+            String res = signAndSubmitRequest(pool, stewardWallet,(String)steward.get("did"), nymRequest);
+            System.out.println(res);
+
+
         }
 
-        if(IssWallet != null){
-            try {
-                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(IssWallet, "{}").get();
-                Issuer.put("did",didResult.getDid());
-                Issuer.put("key",didResult.getVerkey());
-
-                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), Issuer.get("did").toString(), Issuer.get("key").toString(),
-                        null, "TRUST_ANCHOR").get();
-                String res = signAndSubmitRequest(pool, stewardWallet,(String)steward.get("did"), nymRequest);
-                System.out.println(res);
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
+//        if(IssWallet != null){
+//            try {
+//                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(IssWallet, "{}").get();
+//                Issuer.put("did",didResult.getDid());
+//                Issuer.put("key",didResult.getVerkey());
+//
+//                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), Issuer.get("did").toString(), Issuer.get("key").toString(),
+//                        null, "TRUST_ANCHOR").get();
+//                String res = signAndSubmitRequest(pool, stewardWallet,(String)steward.get("did"), nymRequest);
+//                System.out.println(res);
+//
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
+//        }
 
         System.out.println("\n\n===Issuer의 지갑 생성 완료===");
 
@@ -376,7 +397,7 @@ public class PoolAndWalletManager {
     public static void closeAndDeleteWallet(Wallet wallet, String config, String key) throws Exception {
         if (wallet != null) {
             wallet.closeWallet().get();
-            Wallet.deleteWallet(config, key).get();
+            //Wallet.deleteWallet(config, key).get();
         }
     }
     private static String signAndSubmitRequest(Pool pool, Wallet endorserWallet, String endorserDid, String request) throws Exception {

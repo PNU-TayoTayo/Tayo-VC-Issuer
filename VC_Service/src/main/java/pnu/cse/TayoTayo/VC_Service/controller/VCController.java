@@ -19,7 +19,6 @@ public class VCController {
     @GetMapping("/offer")
     public String offer() throws IndyException, ExecutionException, InterruptedException {
 
-        // TODO : Private API룰 구축하자!!
 
         String credentialOffer = vcService.createCredentialOffer();
 
@@ -29,7 +28,6 @@ public class VCController {
     @PostMapping("/getVC")
     public String getVC(@RequestBody VCRequest request) throws IndyException, ExecutionException, InterruptedException {
 
-        // TODO : Private API룰 구축하자!!
         System.out.println("\n\nBE에서 요청온 offer : " + request.getCredentialOffer());
         System.out.println("\n\nBE에서 요청온 Json : "+request.getCredentialRequestJson());
 
