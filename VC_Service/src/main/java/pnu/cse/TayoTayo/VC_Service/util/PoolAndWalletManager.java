@@ -128,21 +128,6 @@ public class PoolAndWalletManager {
             System.out.println(res);
         }
 
-//        if(govWallet != null){
-//            try {
-//                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(govWallet, "{}").get();
-//                government.put("did",didResult.getDid());
-//                government.put("key",didResult.getVerkey());
-//
-//                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), government.get("did").toString(), government.get("key").toString(),
-//                        null, "TRUST_ANCHOR").get();
-//                String res = signAndSubmitRequest(pool, stewardWallet,steward.get("did").toString(), nymRequest);
-//                System.out.println(res);
-//
-//            } catch (Exception ex) {
-//                ex.printStackTrace();
-//            }
-//        }
 
         System.out.println("\n\n===Goverment의 지갑 생성 완료===");
 
@@ -181,21 +166,6 @@ public class PoolAndWalletManager {
 
         }
 
-//        if(IssWallet != null){
-//            try {
-//                DidResults.CreateAndStoreMyDidResult didResult = Did.createAndStoreMyDid(IssWallet, "{}").get();
-//                Issuer.put("did",didResult.getDid());
-//                Issuer.put("key",didResult.getVerkey());
-//
-//                String nymRequest = Ledger.buildNymRequest(steward.get("did").toString(), Issuer.get("did").toString(), Issuer.get("key").toString(),
-//                        null, "TRUST_ANCHOR").get();
-//                String res = signAndSubmitRequest(pool, stewardWallet,(String)steward.get("did"), nymRequest);
-//                System.out.println(res);
-//
-//            } catch (Exception ex) {
-//                ex.printStackTrace();
-//            }
-//        }
 
         System.out.println("\n\n===Issuer의 지갑 생성 완료===");
 
@@ -221,11 +191,11 @@ public class PoolAndWalletManager {
         //1. Government가 Transcript Schema를 생성
 
         Map<String, Object> tayotayoSchema = new HashMap<>();
-        tayotayoSchema.put("name", "TayoTayo_Service_Car_Transcript");
+        tayotayoSchema.put("name", "TayoTayo_Service_Car_Transcript_From_KOTSA"); // 한국교통안전공단
         tayotayoSchema.put("version", "1.2");
         tayotayoSchema.put("attributes",
                 new JSONArray(Arrays.asList("owner_first_name","owner_last_name", "car_number"
-                        ,"car_model","car_delivery_date", "inspection_record", "driving_record")).toString());
+                        ,"car_model","car_delivery_date", "inspection_record", "driving_record","car_fuel")).toString());
                 // 차주의 이름, 차량 번호, 차 모델, 출고 일자, 검사 이력, 주행 거리 일단 여기까지..
 
         // 정부의 did로 issuerCreateSchema 메소드로 스키마 생성!
@@ -397,7 +367,7 @@ public class PoolAndWalletManager {
     public static void closeAndDeleteWallet(Wallet wallet, String config, String key) throws Exception {
         if (wallet != null) {
             wallet.closeWallet().get();
-            //Wallet.deleteWallet(config, key).get();
+            Wallet.deleteWallet(config, key).get();
         }
     }
     private static String signAndSubmitRequest(Pool pool, Wallet endorserWallet, String endorserDid, String request) throws Exception {

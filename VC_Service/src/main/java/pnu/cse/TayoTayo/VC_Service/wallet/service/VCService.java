@@ -1,4 +1,4 @@
-package pnu.cse.TayoTayo.VC_Service.service;
+package pnu.cse.TayoTayo.VC_Service.wallet.service;
 
 
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class VCService {
 
 
     @Transactional
-    public String createVC(String transcriptCredOffer, String transcriptCredRequest) throws IndyException, ExecutionException, InterruptedException {
+    public String createVC(String transcriptCredOffer, String transcriptCredRequest, String memberName, String carNumber) throws IndyException, ExecutionException, InterruptedException {
 
 //        JSONObject credValuesJson = new JSONObject()
 //                .put("first_name", new JSONObject().put("raw", "Alice").put("encoded", "1139481716457488690172217916278103335"))
@@ -47,14 +47,18 @@ public class VCService {
 //                .put("year", new JSONObject().put("raw", "2015").put("encoded", "2016"))
 //                .put("average", new JSONObject().put("raw", "5").put("encoded", "5"));
 
+        // TODO : 여기서 memberName이랑 carNumber 기준으로 DB에서 찾아야 할듯??
+
         JSONObject credValuesJson = new JSONObject()
-                .put("owner_first_name", new JSONObject().put("raw", "donwoo").put("encoded", "1139481716457488690172217916278103335"))
-                .put("owner_last_name", new JSONObject().put("raw", "kim").put("encoded", "5321642780241790123587902456789123452"))
+                .put("owner_first_name", new JSONObject().put("raw", "Donwoo").put("encoded", "1139481716457488690172217916278103335"))
+                .put("owner_last_name", new JSONObject().put("raw", "Kim").put("encoded", "5321642780241790123587902456789123452"))
                 .put("car_number", new JSONObject().put("raw", "00가1234").put("encoded", "12434523576212321"))
                 .put("car_model", new JSONObject().put("raw", "Mercedes-Benz G-Class").put("encoded", "2213454313412354"))
-                .put("car_delivery_date", new JSONObject().put("raw", "2023-01-01").put("encoded", "3124141231422543541"))
-                .put("inspection_record", new JSONObject().put("raw", "2021-01-01").put("encoded", "32156498165564"))
-                .put("driving_record", new JSONObject().put("raw", "250").put("encoded", "15184965131564"));
+                .put("car_fuel", new JSONObject().put("raw", "Diesel").put("encoded", "616531351694"))
+                .put("car_delivery_date", new JSONObject().put("raw", "20230101").put("encoded", "20230101"))
+                .put("inspection_record", new JSONObject().put("raw", "20210101").put("encoded", "20210101"))
+                .put("driving_record", new JSONObject().put("raw", "250").put("encoded", "250"));
+
 
 
         AnoncredsResults.IssuerCreateCredentialResult issuerCredentialResult =

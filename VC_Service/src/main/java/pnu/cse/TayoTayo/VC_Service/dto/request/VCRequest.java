@@ -9,5 +9,7 @@ public class VCRequest {
 
     String credentialRequestJson;
     String credentialOffer;
+    String memberName;
+    String carNumber;
 
 }
