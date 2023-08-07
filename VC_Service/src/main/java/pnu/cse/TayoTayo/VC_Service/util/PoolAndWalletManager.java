@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -62,6 +63,7 @@ public class PoolAndWalletManager {
             Pool.createPoolLedgerConfig(poolName, poolConfig).get();
             pool = Pool.openPoolLedger(poolName, "{}").get();
         }
+
         System.out.println("Pool created and opened successfully.");
 
         return pool;
@@ -85,6 +87,12 @@ public class PoolAndWalletManager {
 
         try {
             stWallet = Wallet.openWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
+
+            JSONArray jsonArray3 = new JSONArray(Did.getListMyDidsWithMeta(stWallet).get());
+            JSONObject jsonObject3 = jsonArray3.getJSONObject(0);
+            String stewardDid = jsonObject3.getString("did");
+            steward.put("did",stewardDid);
+
         }catch(Exception e){
             Wallet.createWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
             stWallet = Wallet.openWallet(steward.get("wallet_config").toString(), steward.get("wallet_credentials").toString()).get();
@@ -114,6 +122,12 @@ public class PoolAndWalletManager {
 
         try {
             govWallet = Wallet.openWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
+
+            JSONArray jsonArray2 = new JSONArray(Did.getListMyDidsWithMeta(govWallet).get());
+            JSONObject jsonObject2 = jsonArray2.getJSONObject(0);
+            String governmentDid = jsonObject2.getString("did");
+            government.put("did",governmentDid);
+
         }catch(Exception e){
             Wallet.createWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
             govWallet = Wallet.openWallet(government.get("wallet_config").toString(), government.get("wallet_credentials").toString()).get();
@@ -138,7 +152,6 @@ public class PoolAndWalletManager {
 
         System.out.println("\n\n===Issuer의 지갑 생성 시작===");
 
-        // TODO : 여기에 Issuer 이름 정해서 넣기
         Issuer.put("wallet_config",
                 new JSONObject().put("id", "Issuer_wallet")
                         .put("storage_config", new JSONObject()
@@ -149,6 +162,12 @@ public class PoolAndWalletManager {
 
         try {
             IssWallet = Wallet.openWallet(Issuer.get("wallet_config").toString(), Issuer.get("wallet_credentials").toString()).get();
+
+            JSONArray jsonArray = new JSONArray(Did.getListMyDidsWithMeta(IssWallet).get());
+            JSONObject jsonObject = jsonArray.getJSONObject(0);
+            String issuerDid = jsonObject.getString("did");
+            Issuer.put("did",issuerDid);
+
         }catch(Exception e){
 
             Wallet.createWallet(Issuer.get("wallet_config").toString(), Issuer.get("wallet_credentials").toString()).get();
@@ -188,7 +207,6 @@ public class PoolAndWalletManager {
     private void createCredentialSchema() throws IndyException, ExecutionException, InterruptedException {
 
         System.out.println("\n\n\n <Government가 Transcript를 위한 Schema를 등록하는 과정>");
-        //1. Government가 Transcript Schema를 생성
 
         Map<String, Object> tayotayoSchema = new HashMap<>();
         tayotayoSchema.put("name", "TayoTayo_Service_Car_Transcript_From_KOTSA"); // 한국교통안전공단
@@ -196,9 +214,7 @@ public class PoolAndWalletManager {
         tayotayoSchema.put("attributes",
                 new JSONArray(Arrays.asList("owner_first_name","owner_last_name", "car_number"
                         ,"car_model","car_delivery_date", "inspection_record", "driving_record","car_fuel")).toString());
-                // 차주의 이름, 차량 번호, 차 모델, 출고 일자, 검사 이력, 주행 거리 일단 여기까지..
 
-        // 정부의 did로 issuerCreateSchema 메소드로 스키마 생성!
         AnoncredsResults.IssuerCreateSchemaResult schemaResult = Anoncreds.issuerCreateSchema(
                 government.get("did").toString(),
                 tayotayoSchema.get("name").toString(),
@@ -210,11 +226,10 @@ public class PoolAndWalletManager {
         government.put("transcript_schema", schemaResult.getSchemaJson());
         System.out.println("Issuer가 사용할 Schema의 ID : " + schemaResult.getSchemaId());
 
-        // 2. Government가 생성한 Transcript Schema를 레저에 등록
+        // Government가 생성한 Transcript Schema를 레저에 등록
         System.out.println("정부가 정의해둔 Schema : " + government.get("transcript_schema").toString());
 
         //Ledger.buildSchemaRequest 함수를 사용하여 위에서 생성한 스키마를 ledger에 등록하기 위한 Schema Request 생성
-        // 여기서 왜 did를 등록ㅎ는거지 ? Schema의 ID는 필요 없는건가..?
         String schemaRequest = Ledger.buildSchemaRequest(government.get("did").toString(), government.get("transcript_schema").toString()).get();
         System.out.println(schemaRequest);
 
@@ -234,7 +249,7 @@ public class PoolAndWalletManager {
         String getSchemaRequest = Ledger.buildGetSchemaRequest(Issuer.get("did").toString(), government.get("transcript_schema_id").toString()).get();
         System.out.println("\n\n레저로 부터 져온 SchemaRequest : " + getSchemaRequest);
 
-        // TODO : 얘의 정확한 용도가 뭘까?
+
         String getSchemaResponse = ensurePreviousRequestApplied(pool, getSchemaRequest, response -> {
             JSONObject getSchemaResponseObject = new JSONObject(response);
             return !getSchemaResponseObject.getJSONObject("result").isNull("seqNo");
@@ -269,14 +284,8 @@ public class PoolAndWalletManager {
 
     }
 
-    /**
-     * Issuer가 여기서 Credential Offer를 생성 (??)
-     * 이걸 따로 레저에 등록하는 과정은 없는듯??
-     *
-     *
-     */
 
-    private void createCredentialOffer() throws IndyException, ExecutionException, InterruptedException {
+    private void createCredentialOffer(){
 
 
         /**
@@ -296,44 +305,10 @@ public class PoolAndWalletManager {
          *
          */
 
-//        System.out.println("\n theUniversity가 생성한 Credential Offer를 서버에게 보낸다");
-//        Alice.put("transcript_cred_offer",transcriptCredOffer);
-//
-//        System.out.println("\n 엘리스는 받은 Credential offer로 부터 schemaID랑 credential definition ID를 획득");
-//        Alice.put("transcript_schema_id",new JSONObject(transcriptCredOffer).getString("schema_id"));
-//        Alice.put("transcript_cred_def_id",new JSONObject(transcriptCredOffer).getString("cred_def_id"));
-
-//        System.out.println("\n엘리스는 VC 생성에 필요한 Master Secret을 생성하고 엘리스 지갑에 저장한다");
-//        String AliceMasterSecretId = Anoncreds.proverCreateMasterSecret(AliceWallet, null).get();
-//        Alice.put("master_secret_id",AliceMasterSecretId);
-
-//        System.out.println("\n 엘리스는 알고 있는 credential definition ID로 레저로부터 Credential Definition를 가져온다");
-//        LedgerResults.ParseResponseResult parsedCredDefResponse = getCredDef(pool, Alice.get("did").toString(), Alice.get("transcript_cred_def_id").toString());
-//        Alice.put("theUniversity_transcript_cred_def",parsedCredDefResponse.getObjectJson());
-
-
-//        // 여기서 Credential request 매개변수로 AliceWallet, AliceDID, Credential Offer, Credential Definition, Master Secret ID
-//        System.out.println("\n엘리스는 VC생성을 위해 Issuer에게 보낼 transcript credential request를 준비한다");
-//        AnoncredsResults.ProverCreateCredentialRequestResult credentialRequestResult =
-//                Anoncreds.proverCreateCredentialReq(AliceWallet, Alice.get("did").toString(), Alice.get("transcript_cred_offer").toString(),
-//                        Alice.get("theUniversity_transcript_cred_def").toString(), Alice.get("master_secret_id").toString()).get();
-//
-//        Alice.put("transcript_cred_request",credentialRequestResult.getCredentialRequestJson());
-//        Alice.put("transcript_cred_request_metadata",credentialRequestResult.getCredentialRequestMetadataJson());
-//
-//        System.out.println("\n엘리스가 Issuer에게 Credential Request를 제출");
-//        university.put("transcript_cred_request",Alice.get("transcript_cred_request"));
-//
-//        // 대학교에서 엘리스에게 credential을 발급해준다 (대학교가 알고 있는 엘리스의 개인정보들) - 즉, 이게 VC 인거지
-//        System.out.println("\n이제 대학교가 엘리스를 위한 Credential을 생성한다"); // 이건 아마도 Issuer의 DB를 하나 파야할듯?
-
     }
 
 
-
-
-
-        @PostConstruct
+    @PostConstruct
     public void init() throws IndyException, ExecutionException, InterruptedException {
 
         System.out.println("\n steward의 DID : "+Did.getListMyDidsWithMeta(stewardWallet).get());
@@ -355,9 +330,9 @@ public class PoolAndWalletManager {
     @PreDestroy
     public void cleanup() throws Exception {
         // 여기서 Pool 삭제하고 Government랑 Issuer 지갑 삭제
-        closeAndDeleteWallet(IssuerWallet,Issuer.get("wallet_config").toString(),Issuer.get("wallet_credentials").toString());
-        closeAndDeleteWallet(governmentWallet,government.get("wallet_config").toString(),government.get("wallet_credentials").toString());
-        closeAndDeleteWallet(stewardWallet,steward.get("wallet_config").toString(),steward.get("wallet_credentials").toString());
+//        closeAndDeleteWallet(IssuerWallet,Issuer.get("wallet_config").toString(),Issuer.get("wallet_credentials").toString());
+//        closeAndDeleteWallet(governmentWallet,government.get("wallet_config").toString(),government.get("wallet_credentials").toString());
+//        closeAndDeleteWallet(stewardWallet,steward.get("wallet_config").toString(),steward.get("wallet_credentials").toString());
 
         pool.closePoolLedger().get();
         Pool.deletePoolLedgerConfig("TayoTayoPool").get();

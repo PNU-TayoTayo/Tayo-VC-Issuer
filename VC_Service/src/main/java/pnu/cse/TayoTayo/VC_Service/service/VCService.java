@@ -1,4 +1,4 @@
-package pnu.cse.TayoTayo.VC_Service.wallet.service;
+package pnu.cse.TayoTayo.VC_Service.service;
 
 
 import lombok.RequiredArgsConstructor;
@@ -10,8 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pnu.cse.TayoTayo.VC_Service.util.PoolAndWalletManager;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -52,7 +50,7 @@ public class VCService {
         JSONObject credValuesJson = new JSONObject()
                 .put("owner_first_name", new JSONObject().put("raw", "Donwoo").put("encoded", "1139481716457488690172217916278103335"))
                 .put("owner_last_name", new JSONObject().put("raw", "Kim").put("encoded", "5321642780241790123587902456789123452"))
-                .put("car_number", new JSONObject().put("raw", "00가1234").put("encoded", "12434523576212321"))
+                .put("car_number", new JSONObject().put("raw", carNumber ).put("encoded", "12434523576212321"))
                 .put("car_model", new JSONObject().put("raw", "Mercedes-Benz G-Class").put("encoded", "2213454313412354"))
                 .put("car_fuel", new JSONObject().put("raw", "Diesel").put("encoded", "616531351694"))
                 .put("car_delivery_date", new JSONObject().put("raw", "20230101").put("encoded", "20230101"))

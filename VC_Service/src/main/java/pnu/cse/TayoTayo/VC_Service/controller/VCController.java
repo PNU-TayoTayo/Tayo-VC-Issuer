@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.hyperledger.indy.sdk.IndyException;
 import org.springframework.web.bind.annotation.*;
 import pnu.cse.TayoTayo.VC_Service.dto.request.VCRequest;
-import pnu.cse.TayoTayo.VC_Service.wallet.service.VCService;
+import pnu.cse.TayoTayo.VC_Service.service.VCService;
 
 import java.util.concurrent.ExecutionException;
 
