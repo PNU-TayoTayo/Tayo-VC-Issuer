@@ -38,7 +38,11 @@ dependencies {
 	implementation("commons-io:commons-io:2.11.0")
 	implementation("org.json:json:20230227")
 	implementation("org.hyperledger:indy:1.15.0")
+
+	// H2 데이터베이스를 사용하기 위한 의존성을 제공 (테스트 용)
+	runtimeOnly 'com.h2database:h2'
 }
+
 
 tasks.named('test') {
 	useJUnitPlatform()
